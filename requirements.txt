@@ -1,0 +1,7 @@
+django
+edge_tts
+asyncio
+Pillow
+SpeechRecognition
+pydub
+openai

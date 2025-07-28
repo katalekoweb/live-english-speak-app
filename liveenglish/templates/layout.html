@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %} Home {% endblock %} - Live English Speak</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+
+  </head>
+  <body>
+
+    <div class="flex flex-col min-h-screen bg-gray-100 shadow-md">
+        <header class=" bg-gray-200">
+        <div class="flex items-center justify-between max-w-7xl mx-auto px-4 py-6">
+            <a href="/" class="font-bold uppercase text-lg"><h1>Live English Speak</h1></a>
+            <nav>
+            <ul>
+                <li><a href="{% url 'home' %}">Home</a></li>
+                {% comment %} <li><a href="{% url 'chat' %}">Chat</a></li> {% endcomment %}
+            </ul>
+            </nav>
+        </div>
+        </header>
+
+        <main class="flex-grow">
+        <div class="flex flex-col items-center justify-between max-w-7xl mx-auto px-4 py-8">
+            {% block content %}
+            <!-- Content will be injected here -->
+            {% endblock %}
+        </div>
+        </main>
+
+        <footer>
+        <p class=" max-w-7xl mx-auto px-4 py-8">&copy; 2023 Live English Speak</p>
+        </footer>
+    </div>
+
+  </body>
+</html>

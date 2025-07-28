@@ -1,0 +1,286 @@
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<div class="" id="app">
+    <h2 class="text-2xl font-bold mb-4 text-center">Welcome to Live English Speak</h2>
+    <p class="mb-4 text-center">This is a real-time English speaking application where you can practice your speaking skills with AI.</p>
+
+    <div class="flex flex-col items-center justify-center">
+        <button :disabled="loadingAnswer || playingAudio || extratingText" @click="record()" 
+        
+        class="cursor-pointer w-32 hover:bg-yellow-500 
+        duration-150 h-32  text-white text-xl rounded-full shadow-lg"
+        :class="{'bg-gray-300': loadingAnswer || playingAudio || extratingText, 'bg-yellow-600': !loadingAnswer && !playingAudio && !extratingText}">
+            <span v-if="recording" class="text-center flex flex-col space-y-2 items-center">
+              <img class="w-10 h-10 rounded-md" src="/media/loading.gif" />
+              <span class="text-sm">Recording...</span>
+            </span>
+            <span v-else>Start Speak</span>
+        </button>
+
+        <div v-if="extratingText" class="text-center flex space-x-3 items-center mt-3">
+          <img class="w-10 h-10 rounded-md" src="/media/loading.gif" />
+          <span>Precessing your message</span>
+        </div>
+
+        <div v-if="loadingAnswer" class="text-center flex space-x-3 items-center mt-3">
+          <img class="w-10 h-10 rounded-md" src="/media/loading.gif" />
+          <span>Loading the answer</span>
+        </div>
+
+        <div v-if="playingAudio" class="text-center flex items-center mt-3">
+          <img class="w-32 h-10 object-cover " src="/media/sound.gif" />
+        </div>
+
+        <audio id="audioPlayback" style="display: none" class="hidden" controls></audio>
+    </div>
+
+    {% comment %} <div>
+        <button id="startBtn">Start Recording</button>
+        <button id="stopBtn" disabled>Stop Recording</button>
+        <audio id="audioPlayback" controls></audio>
+        <a id="downloadLink" href="" download="recording.webm" style="display:none;">Download Recording</a>
+    </div> {% endcomment %}
+
+</div>
+
+<script>
+  const { createApp, ref, onMounted } = Vue
+  createApp({
+    setup() {
+      const recording = ref(false)
+      const extratingText = ref(false)
+      const loadingAnswer = ref(false)
+      const playingAudio = ref(false)
+
+      let mediaRecorder;
+      let audioChunks = []
+      const adioUrl = ref("")
+      let audioPlayback = null;
+
+
+      onMounted(() => {
+        // Now audioPlayback.value is the DOM element
+
+        audioPlayback = document.getElementById("audioPlayback");
+      })
+
+      async function record () {
+
+        if (recording.value == true) {
+          recording.value = false 
+          stopRecord()
+
+          return
+        }
+
+        recording.value = true
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+
+        audioChunks = [];
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+          const audioUrl = URL.createObjectURL(audioBlob);
+          audioPlayback.src = audioUrl;
+          // audioPlayback.href = audioUrl;
+          // audioPlayback.style.display = 'inline';
+
+          audioUrl.value = audioBlob
+
+          // Send audioBlob to backend
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'recording.webm');
+
+          extratingText.value = true
+          fetch('/extract-text/', {
+              method: 'POST',
+              body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+              // generateAudio(data.text)
+              textInput = data.text;
+              getAnswer (textInput)
+              extratingText.value = false
+          })
+          .catch(error => {
+              console.error('Error extracting text:', error);
+              alert('Failed to extract text.');
+              extratingText.value = false
+          });
+
+        };
+
+        mediaRecorder.start();
+
+      }
+
+      const stopRecord = () => {
+        mediaRecorder.stop();
+      }
+
+      function generateAudio(text) {
+        if (!text) {
+            alert('Please enter some text to convert to audio.');
+            return;
+        }
+
+        axios.get('/generate-audio/?text='+text, { text: text })
+            .then(response => {
+                const audioUrl = response.data.audio_url;
+                audio = new Audio(audioUrl);
+                audio.play();
+                playingAudio.value = true
+
+                audio.addEventListener('ended', () => {
+                  playingAudio.value = false
+                });
+
+                audio.addEventListener('pause', () => {
+                  if (audio.currentTime < audio.duration) {
+                    playingAudio.value = false
+                  }
+                });
+            })
+            .catch(error => {
+                console.error('Error generating audio:', error);
+                alert('Failed to generate audio. Please try again later.');
+            });
+      }
+
+      function getAnswer (text) {
+        loadingAnswer.value = true
+        axios.get("/get-answer/?text="+text).then((res) => {
+            if (res.data?.reply) { 
+                generateAudio(res.data?.reply)
+            }
+
+            loadingAnswer.value = false
+        }).catch((error) => {
+            console.log(error)
+            loadingAnswer.value = false
+        })
+      }
+
+      return {
+        recording,
+        record,
+        stopRecord,
+        generateAudio,
+        getAnswer,
+        extratingText,
+        loadingAnswer,
+        playingAudio
+      }
+    }
+  }).mount('#app')
+</script>
+
+<script>
+
+    // generateAudio("Hello App")
+    {% comment %} let audio = null;
+    let textInput = ""
+    let userInput = false
+
+    function generateAudio(text) {
+        if (!text) {
+            alert('Please enter some text to convert to audio.');
+            return;
+        }
+
+        axios.get('/generate-audio/?text='+text, { text: text })
+            .then(response => {
+                const audioUrl = response.data.audio_url;
+                audio = new Audio(audioUrl);
+                audio.play();
+            })
+            .catch(error => {
+                console.error('Error generating audio:', error);
+                alert('Failed to generate audio. Please try again later.');
+            });
+    }
+
+    function getAnswer (text) {
+        axios.get("/get-answer/?text="+text).then((res) => {
+            console.log(res)
+            if (res.data?.reply) { 
+                generateAudio(res.data?.reply)
+            }
+        }).catch((error) => {
+            console.log(error)
+        })
+    }
+
+    let mediaRecorder;
+    let audioChunks = [];
+
+    const startBtn = document.getElementById("startBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const audioPlayback = document.getElementById("audioPlayback");
+    const downloadLink = document.getElementById("downloadLink");
+
+    startBtn.onclick = async () => {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+
+      audioChunks = [];
+      mediaRecorder.ondataavailable = event => {
+        if (event.data.size > 0) {
+          audioChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioPlayback.src = audioUrl;
+        downloadLink.href = audioUrl;
+        downloadLink.style.display = 'inline';
+
+        // Send audioBlob to backend
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+
+        fetch('/extract-text/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            // generateAudio(data.text)
+            textInput = data.text;
+            getAnswer (textInput)
+        })
+        .catch(error => {
+            console.error('Error extracting text:', error);
+            alert('Failed to extract text.');
+        });
+
+      };
+
+      mediaRecorder.start();
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+    };
+
+    stopBtn.onclick = () => {
+      mediaRecorder.stop();
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    }; {% endcomment %}
+
+</script>
+
+{% endblock %}
