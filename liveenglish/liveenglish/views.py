@@ -10,6 +10,8 @@ import tempfile
 import os
 from openai import OpenAI
 from django.contrib.auth.decorators import login_required
+from users.models import Message
+from django.db.models import Q
 
 client = OpenAI(
     api_key="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"
@@ -26,9 +28,37 @@ def home(request):
 def get_gpt_answer (request):
     text = request.GET.get("text")
     conversation = []
+    assistant_reply = ""
+
+    # remove all messages
+    # Message.objects.all().delete()
+
+    # get message from the user
+    user = request.user
+    messages = Message.objects.filter(Q(sender=user) | Q(recipient=user)).order_by('-id')
+
+    # Convert to list of dicts
+    for msg in messages:
+        conversation.append({
+            # 'id': msg.id,
+            # 'sender': msg.sender.username if msg.sender else None,
+            # 'recipient': msg.recipient.username if msg.recipient else None,
+            'role': 'user' if msg.sender else 'assistant', 
+            'content': msg.content,
+            # 'created_at': msg.created_at.isoformat(),
+        })
 
     if text:
+        conversation.insert(0, {"role": "user", "content": text})
         conversation.append({"role": "user", "content": text})
+
+        # save to the database
+        message = Message()
+        message.sender = request.user
+        message.content = text
+        message.save()
+
+        # return JsonResponse({'messages', conversation})
 
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -36,8 +66,19 @@ def get_gpt_answer (request):
             stream=False,
         )
 
+        conversation.pop()
+
         assistant_reply = response.choices[0].message.content
-        return JsonResponse({"reply": assistant_reply})
+
+        if assistant_reply is not None:
+            message = Message()
+            message.recipient = request.user
+            message.content = assistant_reply
+            message.save()
+            # save to list
+            conversation.insert(0, {"role": "assistant", "content": assistant_reply})
+
+    return JsonResponse({"reply": assistant_reply, 'messages': conversation})
 
 
 def generate_audio(request):
