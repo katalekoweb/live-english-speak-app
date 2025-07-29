@@ -9,6 +9,8 @@ from pydub import AudioSegment
 import tempfile
 import os
 from openai import OpenAI
+from django.contrib.auth.decorators import login_required
+
 client = OpenAI(
     api_key="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"
 )
@@ -17,6 +19,7 @@ async def text_to_audio(text, output_file, voice="en-US-AriaNeural"):
     communicate = Communicate(text, voice)
     await communicate.save(output_file)
 
+@login_required
 def home(request):
     return render(request, 'home.html')
 

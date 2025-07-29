@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block title %} Create an account now {% endblock title %} 
+
+{% block content %}
+    <div>
+        <h1 class="text-center text-xl font-bold uppercase">
+            Create your account now
+        </h1>
+
+        <h1 class="text-md text-center mb-4">
+            Create your account now and start learning English by speaking
+        </h1>
+
+        <form method="POST" class="bg-white rounded-xl shadow-md p-6">
+            {% csrf_token %}
+            {{  form.as_p }}
+            <button class="button" type="submit">Register</button>
+        </form>
+    </div>
+{% endblock content %}
