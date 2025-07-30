@@ -8,7 +8,7 @@
     <h2 class="text-2xl font-bold mb-4 text-center">Welcome to Live English Speak</h2>
     <p class="mb-4 text-center">This is a real-time English speaking application where you can practice your speaking skills with AI.</p>
 
-    <div class="flex flex-col items-center justify-center">
+    <div class="flex flex-col items-center justify-center mb-5">
         <button :disabled="loadingAnswer || playingAudio || extratingText" @click="record()" 
         
         class="cursor-pointer w-32 hover:bg-yellow-500 
@@ -46,6 +46,55 @@
 
         <audio id="audioPlayback" style="display: none" class="hidden" controls></audio>
     </div>
+
+    <section class="bg-gray-100 text-gray-800 py-8">
+      <div class="mx-auto space-y-16">
+
+        <!-- Sobre nós -->
+        <div>
+          <h2 class="text-3xl font-bold mb-4">Sobre Nós</h2>
+          <p class="text-lg">
+            Somos uma plataforma criada para ajudar você a praticar inglês de forma simples, rápida e interativa. Nossa missão é tornar a fluência em inglês acessível para todos.
+          </p>
+        </div>
+
+        <!-- Vantagens -->
+        <div>
+          <h2 class="text-3xl font-bold mb-4">Vantagens</h2>
+          <ul class="list-disc pl-6 space-y-2 text-lg">
+            <li>Converse com inteligência artificial 24/7</li>
+            <li>Melhore seu vocabulário e fluência</li>
+            <li>Feedback instantâneo em tempo real</li>
+            <li>Sem necessidade de agendamento ou professores</li>
+          </ul>
+        </div>
+
+        <!-- Por que usar -->
+        <div>
+          <h2 class="text-3xl font-bold mb-4">Por que usar?</h2>
+          <p class="text-lg">
+            Porque aprender inglês praticando conversação é mais eficiente. Nossa plataforma simula conversas reais e te ajuda a ganhar confiança para falar com nativos.
+          </p>
+        </div>
+
+        <!-- Ajuda -->
+        <div>
+          <h2 class="text-3xl font-bold mb-4">Ajuda</h2>
+          <p class="text-lg">
+            Tem dúvidas? Acesse nossa seção de <a href="#" class="text-blue-600 underline">Perguntas Frequentes</a> ou fale com o nosso suporte.
+          </p>
+        </div>
+
+        <!-- Preço -->
+        <div>
+          <h2 class="text-3xl font-bold mb-4">Preço</h2>
+          <p class="text-lg">
+            Oferecemos um plano gratuito com funcionalidades básicas e planos pagos a partir de <strong>R$19,90/mês</strong> para acesso ilimitado.
+          </p>
+        </div>
+
+      </div>
+    </section>
 
     {% comment %} <div>
         <button id="startBtn">Start Recording</button>
