@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import asyncio
 from edge_tts import Communicate
 from django.views.decorators.csrf import csrf_exempt
@@ -23,6 +23,55 @@ async def text_to_audio(text, output_file, voice="en-US-AriaNeural"):
 
 @login_required
 def home(request):
+    user = request.user
+    messages = Message.objects.filter(Q(sender=user) | Q(recipient=user)).order_by('-id')
+
+    if messages.__len__() == 0:
+        # train the prompt to an english teacher
+        conversationTrain = []
+        train_message = "You are my english teacher. Always give me short answers. Always that we are talking if i make a mistake please correct me"
+        conversationTrain.append({"role": "user", "content": train_message})
+
+        # save to the database
+        message = Message()
+        message.sender = request.user
+        message.content = train_message
+        message.save()
+
+        # return JsonResponse({'messages', conversation})
+        responseTrain = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=conversationTrain,
+            stream=False,
+        )
+
+        # store the answer from gpt ai
+        assistant_reply_train = responseTrain.choices[0].message.content
+        if assistant_reply_train is not None:
+            message = Message()
+            message.recipient = request.user
+            message.content = assistant_reply_train
+            message.save()
+
+        # get messages again
+        messages = Message.objects.filter(Q(sender=user) | Q(recipient=user)).order_by('-id')
+
+    # return HttpResponse(messages.__len__())
+
+    conversation = []
+    # Convert to list of dicts
+    for msg in messages:
+        conversation.append({
+            # 'id': msg.id,
+            # 'sender': msg.sender.username if msg.sender else None,
+            # 'recipient': msg.recipient.username if msg.recipient else None,
+            'role': 'user' if msg.sender else 'assistant', 
+            'content': msg.content,
+            # 'created_at': msg.created_at.isoformat(),
+        })
+
+    print(conversation)
+
     return render(request, 'home.html')
 
 def get_gpt_answer (request):
@@ -32,11 +81,13 @@ def get_gpt_answer (request):
 
     # remove all messages
     # Message.objects.all().delete()
+    # return HttpResponse("Messages deletes")
 
     # get message from the user
     user = request.user
     messages = Message.objects.filter(Q(sender=user) | Q(recipient=user)).order_by('-id')
 
+  
     # Convert to list of dicts
     for msg in messages:
         conversation.append({
@@ -83,7 +134,9 @@ def get_gpt_answer (request):
 
 def generate_audio(request):
     text = request.GET.get("text", "Hello, this is a test of Edge TTS.")
-    print(text)
+    text = text.replace("*", "")
+    text = text.replace("#", "")
+
     audio_filename = "output.mp3"
     audio_path = os.path.join("media", audio_filename)
 
