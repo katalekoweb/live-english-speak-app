@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-f@1ox=f39-iy)f!91er_if6dw5v2*&q3@vidbk-s&+)ngdwd6e
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["http://katalyna.pythonanywhere.com", "https://katalyna.pythonanywhere.com"]
+ALLOWED_HOSTS = ["*", "http://katalyna.pythonanywhere.com", "https://katalyna.pythonanywhere.com"]
 
 LOGIN_URL = 'users:login'  # name of your login URL pattern
 
