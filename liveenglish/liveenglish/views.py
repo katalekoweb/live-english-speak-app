@@ -7,11 +7,11 @@ from django.http import JsonResponse
 import speech_recognition as sr
 from pydub import AudioSegment
 import tempfile
-import os
 from openai import OpenAI
 from django.contrib.auth.decorators import login_required
 from users.models import Message
 from django.db.models import Q
+from pathlib import Path
 # from transformers import MarianMTModel, MarianTokenizer
 
 # # English to Portuguese model
@@ -155,10 +155,10 @@ def generate_audio(request):
     text = text.replace("#", "")
 
     audio_filename = "output.mp3"
-    audio_path = os.path.join("media", audio_filename)
+    audio_path = Path("media") / audio_filename
 
     # Generate audio if not exists or text changed
-    if not os.path.exists(audio_path) or request.GET.get("text"):
+    if not audio_path.exists() or request.GET.get("text"):
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         loop.run_until_complete(text_to_audio(text, audio_path))
@@ -190,8 +190,10 @@ def extract_text(request):
             except sr.RequestError:
                 text = ""
 
-        os.remove(temp_audio_path)
-        os.remove(wav_path)
+        # os.remove(temp_audio_path)
+        # os.remove(wav_path)
+        Path(temp_audio_path).unlink(missing_ok=True)
+        Path(wav_path).unlink(missing_ok=True)
         return JsonResponse({'text': text})
     return JsonResponse({'error': 'No audio file received'}, status=400)
 
