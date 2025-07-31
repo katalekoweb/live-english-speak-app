@@ -12,6 +12,17 @@ from openai import OpenAI
 from django.contrib.auth.decorators import login_required
 from users.models import Message
 from django.db.models import Q
+# from transformers import MarianMTModel, MarianTokenizer
+
+# # English to Portuguese model
+# model_name = 'Helsinki-NLP/opus-mt-en-pt'
+# tokenizer = MarianTokenizer.from_pretrained(model_name)
+# model = MarianMTModel.from_pretrained(model_name)
+
+# def translate(text):
+#     tokens = tokenizer(text, return_tensors="pt", padding=True)
+#     translated = model.generate(**tokens)
+#     return tokenizer.decode(translated[0], skip_special_tokens=True)
 
 client = OpenAI(
     api_key="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"
@@ -197,9 +208,11 @@ def get_conversation (request) :
         content = msg.content.replace("\n", "<br/>")
         content = content.replace("*", "")
         content = content.replace("#", "")
+        content_pt = "" # translate(content)
         conversation.append({
             'role': 'user' if msg.sender else 'assistant', 
             'content': content,
+            'content_pt': content_pt,
             'created_at': msg.created_at.isoformat(),
         })
 

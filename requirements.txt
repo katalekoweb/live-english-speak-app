@@ -5,3 +5,7 @@ Pillow
 SpeechRecognition
 pydub
 openai
+# deep-translator
+# transformers 
+# torch 
+# sentencepiece
