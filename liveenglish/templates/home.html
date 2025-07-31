@@ -45,6 +45,19 @@
         </div>
 
         <audio id="audioPlayback" style="display: none" class="hidden" controls></audio>
+
+        <div id="chat-container" class="bg-white shadow-md p-4 rounded-lg space-y-6 mt-5 max-h-[50vh] overflow-y-auto w-full">
+          <div v-for="(message,index) in conversation" :key="index" class="relative" :class="{'flex justify-end items-center': message.role == 'user'}">
+              <div class="w-[50vw] border border-gray-200 shadow rounded-md p-4 relative">
+                <span class="font-bold"><span v-html="message.role"></span>: </span>
+                <span v-html="message.content"></span>
+                <button class="w-14 h-14 bg-yellow-500 bg-opacity-90 text-gray-700 rounded-full absolute -top-4 right-4" @click="generateAudio(message.content)">
+                Listen
+              </button>
+              </div>
+              
+          </div>
+        </div>
     </div>
 
     <section class="bg-gray-100 text-gray-800 py-8">
@@ -113,20 +126,42 @@
       const extratingText = ref(false)
       const loadingAnswer = ref(false)
       const playingAudio = ref(false)
+      const conversation = ref([])
 
-      let mediaRecorder;
+      let mediaRecorder
       let audioChunks = []
       const adioUrl = ref("")
-      let audioPlayback = null;
+      let audioPlayback = null
+      let audio = null
 
+      function scrollToBottom () {
+          const container = document.getElementById('chat-container');
+          container.scrollTop = chatContainer.scrollHeight;
+
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+          });
+      }
 
       onMounted(() => {
         // Now audioPlayback.value is the DOM element
 
         audioPlayback = document.getElementById("audioPlayback");
+        getConversation()
+        scrollToBottom()
       })
 
+      const getConversation = () => {
+        axios.get("/get-conversation").then((res) => {
+          if (res?.data?.conversation) conversation.value = res.data.conversation
+        })
+      }
+
       async function record () {
+
+        audio?.pause();
+        playingAudio.value = false
 
         if (recording.value == true) {
           recording.value = false 
@@ -189,6 +224,10 @@
       }
 
       function generateAudio(text) {
+
+        audio?.pause();
+        playingAudio.value = false
+
         if (!text) {
             alert('Please enter some text to convert to audio.');
             return;
@@ -210,6 +249,8 @@
                     playingAudio.value = false
                   }
                 });
+
+                getConversation()
             })
             .catch(error => {
                 console.error('Error generating audio:', error);
@@ -218,6 +259,10 @@
       }
 
       function getAnswer (text) {
+
+        audio?.pause();
+        playingAudio.value = false
+        
         loadingAnswer.value = true
         axios.get("/get-answer/?text="+text).then((res) => {
             if (res.data?.reply) { 
@@ -239,7 +284,10 @@
         getAnswer,
         extratingText,
         loadingAnswer,
-        playingAudio
+        playingAudio,
+        conversation,
+        getConversation,
+        scrollToBottom
       }
     }
   }).mount('#app')

@@ -26,5 +26,6 @@ urlpatterns = [
     path('generate-audio/', views.generate_audio, name='generate_audio'),
     path('extract-text/', views.extract_text, name='extract_text'),
     path('get-answer/', views.get_gpt_answer, name='get_answer'),
+     path('get-conversation/', views.get_conversation, name='get_conversation'),
     path('users/', include('users.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

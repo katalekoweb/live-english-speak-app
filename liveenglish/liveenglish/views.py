@@ -24,12 +24,20 @@ async def text_to_audio(text, output_file, voice="en-US-AriaNeural"):
 @login_required
 def home(request):
     user = request.user
+
+    # remove all messages
+    # Message.objects.all().delete()
+
     messages = Message.objects.filter(Q(sender=user) | Q(recipient=user)).order_by('-id')
 
     if messages.__len__() == 0:
         # train the prompt to an english teacher
         conversationTrain = []
-        train_message = "You are my english teacher. Always give me short answers. Always that we are talking if i make a mistake please correct me"
+        train_message = """
+        I want you to act as my personal English teacher. My goal is to improve both my grammar and pronunciation. I'm currently at an intermediate level—I understand basic grammar but still make mistakes with verb tenses, articles, and prepositions. For pronunciation, I struggle with "th" sounds, stress, and intonation.
+        Please correct any grammar mistakes I make in my writing or speaking (you can pretend I'm speaking), and explain the corrections clearly. Also, give me tips for pronunciation, including phonetic spellings and exercises to help me practice difficult sounds. I’d like to learn through example sentences, mini conversations, and short quizzes. Feel free to ask me questions, correct my responses, and give me feedback like a real teacher.
+        Please give me short answer. without simbols. just text.
+        """
         conversationTrain.append({"role": "user", "content": train_message})
 
         # save to the database
@@ -69,8 +77,6 @@ def home(request):
             'content': msg.content,
             # 'created_at': msg.created_at.isoformat(),
         })
-
-    print(conversation)
 
     return render(request, 'home.html')
 
@@ -177,3 +183,25 @@ def extract_text(request):
         os.remove(wav_path)
         return JsonResponse({'text': text})
     return JsonResponse({'error': 'No audio file received'}, status=400)
+
+def get_conversation (request) : 
+    user = request.user
+    messages = Message.objects.filter(Q(sender=user) | Q(recipient=user)).order_by('id')
+
+    # return HttpResponse(messages.__len__())
+
+    conversation = []
+    
+    # Convert to list of dicts
+    for msg in messages:
+        content = msg.content.replace("\n", "<br/>")
+        content = content.replace("*", "")
+        content = content.replace("#", "")
+        conversation.append({
+            'role': 'user' if msg.sender else 'assistant', 
+            'content': content,
+            'created_at': msg.created_at.isoformat(),
+        })
+
+    return JsonResponse({'conversation': conversation})
+
